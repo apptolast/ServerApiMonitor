@@ -5,6 +5,7 @@ use axum::{
     Json,
 };
 use std::net::SocketAddr;
+use std::env;
 use tracing::info;
 
 // Import own módulos
@@ -21,6 +22,12 @@ const API_NAME: &str = "Health Dashboard API";
 async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt::init();
 
+    // Port 3000
+    let port = env::var("PORT")
+        .unwrap_or_else(|_| "3000".to_string())
+        .parse::<u16>()
+        .expect("PORT should be a number");
+
     // Create client of Kubernetes
     let kube_client = kube_client::create_client().await?;
 
@@ -31,7 +38,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/pods", get(get_pods))  // NUEVA RUTA
         .with_state(kube_client);  // Compartir el cliente
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+    let addr = SocketAddr::from(([0, 0, 0, 0], port));
     info!("🚀 Server running on http://{}", addr);
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
